@@ -103,24 +103,46 @@ function getCoverMarkup(song) {
   }
   return `<div class="cover-placeholder" aria-hidden="true">♫</div>`;
 }
-function renderSongs() {
-  const search = $("searchInput").value.trim().toLowerCase();
-  visibleSongs = songs.filter(song => {
-    const languageOK = !activeLanguage || song.language === activeLanguage;
-    const favoriteOK = activeView !== "favorites" || favorites.has(song.id);
-    const haystack = `${song.title} ${song.artist} ${song.album || ""} ${song.language}`.toLowerCase();
-    return languageOK && favoriteOK && haystack.includes(search);
+function renderAlbums() {
+  const grid = $("albumGrid");
+  if (!grid) return;
+  const groups = new Map();
+  songs.forEach(song => {
+    const name = (song.album || song.title || "Singles").trim();
+    if (!groups.has(name)) groups.set(name, song);
   });
-  if (activeView === "favorites") $("sectionTitle").textContent = "My favourites";
-  else if (activeLanguage) $("sectionTitle").textContent = `${activeLanguage} music`;
-  else $("sectionTitle").textContent = "Featured music";
-  $("songCount").textContent = `${visibleSongs.length} ${visibleSongs.length === 1 ? "track" : "tracks"}`;
-  const grid = $("songGrid");
-  if (!visibleSongs.length) {
-    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">♫</div><h3>${activeView === "favorites" ? "No favourites yet" : "No tracks found"}</h3><p>${activeView === "favorites" ? "Tap the heart on a song to save it here." : "Try another search or add permitted tracks from the admin panel."}</p></div>`;
+  const albums = [...groups.entries()];
+  if (!albums.length) {
+    grid.innerHTML = '<div class="empty-state"><p>Albums will appear here when songs are added by the admin.</p></div>';
     return;
   }
-  grid.innerHTML = visibleSongs.map(song => `
+  grid.innerHTML = albums.slice(0, 12).map(([name, song]) => `
+    <button class="album-card" type="button" data-album="${safeText(name)}" aria-label="Show songs from ${safeText(name)}">
+      ${song.coverUrl && validHttpUrl(song.coverUrl)
+        ? `<img class="album-cover" loading="lazy" src="${safeText(song.coverUrl)}" alt="">`
+        : `<div class="album-cover cover-placeholder">♫</div>`}
+      <span class="album-title">${safeText(name)}</span>
+      <span class="album-year">${safeText(song.language)}</span>
+    </button>`).join("");
+  grid.querySelectorAll("[data-album]").forEach(button => button.addEventListener("click", () => {
+    const name = button.dataset.album;
+    $("searchInput").value = "";
+    activeView = "home";
+    activeLanguage = "";
+    visibleSongs = songs.filter(song => (song.album || song.title || "Singles").trim() === name);
+    $("sectionTitle").textContent = name;
+    $("songCount").textContent = `${visibleSongs.length} ${visibleSongs.length === 1 ? "track" : "tracks"}`;
+    renderSongCards(visibleSongs);
+    $("songGrid").scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
+}
+function renderSongCards(list) {
+  const grid = $("songGrid");
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty-state"><h3>No tracks found</h3><p>Try another search.</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(song => `
     <article class="song-card">
       <div class="cover-wrap">${getCoverMarkup(song)}
         <button class="cover-play" data-play="${safeText(song.id)}" aria-label="Play ${safeText(song.title)}">▶</button>
@@ -135,9 +157,28 @@ function renderSongs() {
           </div>
         </div>
       </div>
+      <div class="list-actions"><span class="list-album">${safeText(song.album || "Single")}</span><span class="list-year">${safeText(song.language)}</span></div>
     </article>`).join("");
   grid.querySelectorAll("[data-play]").forEach(button => button.addEventListener("click", () => playSong(button.dataset.play)));
   grid.querySelectorAll("[data-fav]").forEach(button => button.addEventListener("click", () => toggleFavorite(button.dataset.fav)));
+}
+function renderSongs() {
+  const search = $("searchInput").value.trim().toLowerCase();
+  visibleSongs = songs.filter(song => {
+    const languageOK = !activeLanguage || song.language === activeLanguage;
+    const favoriteOK = activeView !== "favorites" || favorites.has(song.id);
+    const haystack = `${song.title} ${song.artist} ${song.album || ""} ${song.language}`.toLowerCase();
+    return languageOK && favoriteOK && haystack.includes(search);
+  });
+  if (activeView === "favorites") $("sectionTitle").textContent = "My favourites";
+  else if (activeLanguage) $("sectionTitle").textContent = `${activeLanguage} music`;
+  else $("sectionTitle").textContent = "Featured music";
+  $("songCount").textContent = `${visibleSongs.length} ${visibleSongs.length === 1 ? "track" : "tracks"}`;
+  if (!visibleSongs.length) {
+    $("songGrid").innerHTML = `<div class="empty-state"><div class="empty-icon">♫</div><h3>${activeView === "favorites" ? "No favourites yet" : "No tracks found"}</h3><p>${activeView === "favorites" ? "Tap the heart on a song to save it here." : "Try another search or add permitted tracks from the admin panel."}</p></div>`;
+    return;
+  }
+  renderSongCards(visibleSongs);
 }
 function updatePlayer(song) {
   $("playerTitle").textContent = song.title;
@@ -173,18 +214,7 @@ async function playSong(id) {
     $("playBtn").textContent = "Ⅱ";
   } catch (error) {
     $("playBtn").textContent = "▶";
-    console.error("Audio playback failed:", error);
-    if (audio.error) {
-      const messages = {
-        1: "ഓഡിയോ പ്ലേ ചെയ്യുന്നത് നിർത്തി.",
-        2: "നെറ്റ്‌വർക്ക് പ്രശ്നം. വീണ്ടും ശ്രമിക്കുക.",
-        3: "ഓഡിയോ ഫയൽ decode ചെയ്യാൻ കഴിഞ്ഞില്ല.",
-        4: "ഈ ഓഡിയോ ഫയൽ ബ്രൗസറിന് പ്ലേ ചെയ്യാൻ കഴിയുന്നില്ല."
-      };
-      notify(messages[audio.error.code] || "ഓഡിയോ പ്ലേ ചെയ്യാനായില്ല. Audio URL പരിശോധിക്കുക.");
-    } else {
-      notify("പ്ലേ ചെയ്യാൻ കഴിഞ്ഞില്ല. വീണ്ടും Play അമർത്തി ശ്രമിക്കുക.");
-    }
+    notify("പാട്ട് പ്ലേ ചെയ്യാനായില്ല. R2 URL, file type, public access എന്നിവ പരിശോധിക്കുക.");
   }
   renderSongs();
 }
@@ -229,6 +259,7 @@ async function loadSongs() {
       songs.push({ id: d.id, title: data.title, artist: data.artist, album: data.album || "", language: data.language, coverUrl: data.coverUrl || "", audioUrl: data.audioUrl, downloadAllowed: data.downloadAllowed === true });
     });
     renderSongs();
+    renderAlbums();
     if (isAdmin) renderAdminList();
   } catch (error) {
     console.error(error);
@@ -365,12 +396,13 @@ $("seekBar").addEventListener("input", () => {
   if (Number.isFinite(audio.duration) && audio.duration > 0) audio.currentTime = Number($("seekBar").value) / 100 * audio.duration;
 });
 audio.addEventListener("ended", () => { if (songs.length) playSong(songs[(currentIndex + 1) % songs.length].id); });
-audio.addEventListener("error", () => {
-  if (audio.src) {
-    $("playBtn").textContent = "▶";
-    console.error("Audio element error:", audio.error);
-  }
-});
+audio.addEventListener("error", () => { if (audio.src) { $("playBtn").textContent = "▶"; notify("Audio file ലഭ്യമല്ല. R2 public URL, CORS, file path പരിശോധിക്കുക."); } });
+
+
+const albumsNavBtn = $("albumsNavBtn");
+if (albumsNavBtn) albumsNavBtn.addEventListener("click", () => $("albumGrid")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+const viewAlbumsBtn = $("viewAlbumsBtn");
+if (viewAlbumsBtn) viewAlbumsBtn.addEventListener("click", () => $("albumGrid")?.scrollIntoView({ behavior: "smooth", block: "start" }));
 
 if (configured) {
   onAuthStateChanged(auth, async user => {
