@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f7f8fc">
+  <title>Raaga — Malayalam & Tamil Music</title>
+  <meta name="description" content="Discover Malayalam and Tamil music. Stream and download music shared with permission.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Raaga home"><span class="brand-mark">♫</span><span>raaga<span class="brand-dot">.</span></span></a>
+    <label class="searchbox"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search songs, albums, artists…" autocomplete="off"></label>
+    <div class="header-actions">
+      <button class="button button-ghost" id="loginBtn">Login</button>
+      <button class="button button-primary" id="registerBtn">Create account</button>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <p class="side-label">DISCOVER</p>
+      <button class="nav-item active" data-view="home"><span>⌂</span> Home</button>
+      <button class="nav-item" data-language="Malayalam"><span>മ</span> Malayalam</button>
+      <button class="nav-item" data-language="Tamil"><span>த</span> Tamil</button>
+      <button class="nav-item" data-view="favorites"><span>♡</span> My favourites</button>
+      <div class="sidebar-divider"></div>
+      <p class="side-label">YOUR MUSIC</p>
+      <button class="nav-item" id="profileBtn"><span>◉</span> My profile</button>
+      <button class="nav-item" id="adminBtn" hidden><span>⚙</span> Admin panel</button>
+      <div class="sidebar-note"><span class="note-icon">♫</span><strong>Music, your way.</strong><p>Independent music and tracks shared with permission.</p></div>
+    </aside>
+
+    <main class="main-content">
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">YOUR SOUTH INDIAN SOUNDTRACK</span>
+          <h1>Feel every<br><span>raagam.</span></h1>
+          <p>Discover Malayalam melodies and Tamil favourites, all in one place.</p>
+          <button class="button button-dark" id="exploreBtn">Explore music <span>→</span></button>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="orb orb-one"></div><div class="orb orb-two"></div>
+          <div class="vinyl"><div class="vinyl-center">♫</div></div>
+          <div class="floating-tag tag-top">♪ Malayalam</div><div class="floating-tag tag-bottom">♪ தமிழ் இசை</div>
+        </div>
+      </section>
+
+      <section class="quick-filters">
+        <button class="filter-chip selected" data-view="home">All music</button>
+        <button class="filter-chip" data-language="Malayalam">Malayalam</button>
+        <button class="filter-chip" data-language="Tamil">Tamil</button>
+        <button class="filter-chip" data-sort="newest">Recently added</button>
+      </section>
+
+      <section class="section-heading">
+        <div><p class="eyebrow">MADE FOR YOUR MOOD</p><h2 id="sectionTitle">Featured music</h2></div>
+        <span class="muted" id="songCount">0 tracks</span>
+      </section>
+      <div id="songGrid" class="song-grid">
+        <div class="empty-state"><div class="empty-icon">♫</div><h3>Your next favourite is waiting</h3><p>Tracks added by the admin will appear here.</p></div>
+      </div>
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+      <footer><span>© <span id="year"></span> Raaga Music</span><span>Only play or download music you have permission to use.</span></footer>
+    </main>
+  </div>
+
+  <div class="player" id="player">
+    <div class="now-playing">
+      <div class="mini-cover" id="playerCover">♫</div>
+      <div class="now-text"><strong id="playerTitle">Choose a song</strong><span id="playerArtist">Your music starts here</span></div>
+      <button class="icon-button" id="playerFav" title="Add to favourites" aria-label="Add to favourites">♡</button>
+    </div>
+    <div class="player-center">
+      <div class="player-controls">
+        <button class="player-control" id="prevBtn" title="Previous song" aria-label="Previous song">|◀</button>
+        <button class="play-button" id="playBtn" title="Play or pause" aria-label="Play or pause">▶</button>
+        <button class="player-control" id="nextBtn" title="Next song" aria-label="Next song">▶|</button>
+      </div>
+      <div class="timeline"><span id="currentTime">0:00</span><input type="range" id="seekBar" min="0" max="100" value="0" aria-label="Seek"><span id="duration">0:00</span></div>
+    </div>
+    <div class="player-extra"><span>♫</span><input id="volumeBar" type="range" min="0" max="1" step="0.05" value="0.8" aria-label="Volume"><a id="downloadBtn" class="download-link disabled" href="#" download aria-label="Download current song" title="Download">↓</a></div>
+    <audio id="audio" preload="metadata" crossorigin="anonymous"></audio>
+  </div>
+
+  <dialog id="authDialog" class="modal">
+    <form method="dialog" class="modal-close"><button class="close-button" aria-label="Close">×</button></form>
+    <div class="modal-brand"><span class="brand-mark">♫</span> raaga.</div>
+    <h2 id="authHeading">Welcome back</h2><p class="muted" id="authSubheading">Sign in to save your favourite music.</p>
+    <form id="authForm" class="stack-form">
+      <label id="nameField" hidden>Display name<input id="displayName" type="text" maxlength="60" autocomplete="name"></label>
+      <label>Email address<input id="email" type="email" required autocomplete="email"></label>
+      <label>Password<input id="password" type="password" minlength="6" required autocomplete="current-password"></label>
+      <button class="button button-primary full-width" id="authSubmit" type="submit">Login</button>
+    </form>
+    <p class="auth-switch" id="authSwitch">New here? <button id="switchAuth" type="button">Create an account</button></p>
+    <p class="form-message" id="authMessage"></p>
+  </dialog>
+
+  <dialog id="adminDialog" class="modal admin-modal">
+    <form method="dialog" class="modal-close"><button class="close-button" aria-label="Close">×</button></form>
+    <div class="modal-brand"><span class="brand-mark">♫</span> raaga. <span class="admin-pill">ADMIN</span></div>
+    <h2>Music management</h2><p class="muted">Add metadata for audio files already uploaded to your Cloudflare R2 bucket.</p>
+    <form id="songForm" class="stack-form">
+      <label>Song title<input id="songTitle" required maxlength="120"></label>
+      <label>Artist / singer<input id="songArtist" required maxlength="120"></label>
+      <div class="form-row">
+        <label>Language<select id="songLanguage" required><option>Malayalam</option><option>Tamil</option></select></label>
+        <label>Album<input id="songAlbum" maxlength="120" placeholder="Single / album name"></label>
+      </div>
+      <label>Cover image URL (optional)<input id="songCover" type="url" placeholder="https://…"></label>
+      <label>Public R2 audio URL<input id="songAudio" type="url" required placeholder="https://pub-…r2.dev/song.mp3"></label>
+      <label>Download allowed?<select id="songDownload"><option value="true">Yes — I have permission</option><option value="false">No — stream only</option></select></label>
+      <label class="check-label"><input id="songAuthorized" type="checkbox" required> I confirm I own or have permission to distribute this audio.</label>
+      <button class="button button-primary full-width" type="submit">Add song</button>
+    </form>
+    <div class="admin-list"><h3>Existing tracks</h3><div id="adminSongList">Loading…</div></div>
+    <p class="form-message" id="adminMessage"></p>
+  </dialog>
+
+  <dialog id="profileDialog" class="modal">
+    <form method="dialog" class="modal-close"><button class="close-button" aria-label="Close">×</button></form>
+    <div class="modal-brand"><span class="brand-mark">♫</span> raaga.</div><h2>My profile</h2>
+    <div id="profileContent" class="profile-content"></div>
+    <button class="button button-ghost full-width" id="logoutBtn">Log out</button>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
