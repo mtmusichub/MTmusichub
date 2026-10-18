@@ -364,7 +364,8 @@ document.querySelectorAll('[data-view="favorites"]').forEach(button => button.ad
 document.querySelectorAll('[data-sort="newest"]').forEach(button => button.addEventListener("click", () => {
   songs.sort((a,b) => 0); renderSongs();
 }));
-$("exploreBtn").addEventListener("click", () => $("songGrid").scrollIntoView({ behavior: "smooth", block: "start" }));
+const exploreBtn = $("exploreBtn");
+if (exploreBtn) exploreBtn.addEventListener("click", () => $("songGrid").scrollIntoView({ behavior: "smooth", block: "start" }));
 $("playBtn").addEventListener("click", async () => {
   if (currentIndex < 0) {
     if (visibleSongs.length) return playSong(visibleSongs[0].id);
