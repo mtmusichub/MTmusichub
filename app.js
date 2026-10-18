@@ -173,7 +173,18 @@ async function playSong(id) {
     $("playBtn").textContent = "Ⅱ";
   } catch (error) {
     $("playBtn").textContent = "▶";
-    notify("പാട്ട് പ്ലേ ചെയ്യാനായില്ല. R2 URL, file type, public access എന്നിവ പരിശോധിക്കുക.");
+    console.error("Audio playback failed:", error);
+    if (audio.error) {
+      const messages = {
+        1: "ഓഡിയോ പ്ലേ ചെയ്യുന്നത് നിർത്തി.",
+        2: "നെറ്റ്‌വർക്ക് പ്രശ്നം. വീണ്ടും ശ്രമിക്കുക.",
+        3: "ഓഡിയോ ഫയൽ decode ചെയ്യാൻ കഴിഞ്ഞില്ല.",
+        4: "ഈ ഓഡിയോ ഫയൽ ബ്രൗസറിന് പ്ലേ ചെയ്യാൻ കഴിയുന്നില്ല."
+      };
+      notify(messages[audio.error.code] || "ഓഡിയോ പ്ലേ ചെയ്യാനായില്ല. Audio URL പരിശോധിക്കുക.");
+    } else {
+      notify("പ്ലേ ചെയ്യാൻ കഴിഞ്ഞില്ല. വീണ്ടും Play അമർത്തി ശ്രമിക്കുക.");
+    }
   }
   renderSongs();
 }
@@ -354,7 +365,12 @@ $("seekBar").addEventListener("input", () => {
   if (Number.isFinite(audio.duration) && audio.duration > 0) audio.currentTime = Number($("seekBar").value) / 100 * audio.duration;
 });
 audio.addEventListener("ended", () => { if (songs.length) playSong(songs[(currentIndex + 1) % songs.length].id); });
-audio.addEventListener("error", () => { if (audio.src) { $("playBtn").textContent = "▶"; notify("Audio file ലഭ്യമല്ല. R2 public URL, CORS, file path പരിശോധിക്കുക."); } });
+audio.addEventListener("error", () => {
+  if (audio.src) {
+    $("playBtn").textContent = "▶";
+    console.error("Audio element error:", audio.error);
+  }
+});
 
 if (configured) {
   onAuthStateChanged(auth, async user => {
